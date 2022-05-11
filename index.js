@@ -9,6 +9,22 @@ const port = process.env.PORT || 5000
 app.use(cors())
 app.use(express.json())
 
+const verifyJwt = (req, res, next) => {
+  const authHeader = req.headers.authorization
+  if (!authHeader) {
+    return res.status(401).send({ message: 'UnAuthorized Access' })
+  }
+
+  const accessToken = authHeader.split(' ')[1]
+  jwt.verify(accessToken, process.env.ACCESS_TOKE_SECRET, (err, decoded) => {
+    if (err) {
+      return res.status(403).send({ message: 'Forbidden Access' })
+    }
+    req.decoded = decoded
+    next()
+  })
+}
+
 app.get('/', (req, res) => {
   res.send('Simple JWT server is Running')
 })
@@ -29,6 +45,13 @@ app.post('/login', (req, res) => {
   } else {
     res.send({ success: false })
   }
+})
+
+app.get('/orders', verifyJwt, (req, res) => {
+  res.send([
+    { id: 1, item: 'sunglass' },
+    { id: 2, item: 'Moonglass' },
+  ])
 })
 
 app.listen(port, () =>
